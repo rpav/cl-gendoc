@@ -9,7 +9,7 @@ Lisp, because I couldn't find something similar:
   (:mdf "intro.md")
   (:mdf "details.md")
   (:apiref :some-package :another-package)
-  (:mdf "closing.html"))
+  (:mdf "closing.md"))
 ```
 
 Of some interest is probably the API reference generator:
