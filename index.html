@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<head>
+  <title>GenDoc Documentation
+  </title>
+  <link rel='stylesheet' type='text/css' href='simple.css' />
+</head>
+<html>
+
+<h1>cl-gendoc</h1>
+
+<p>This is a simple but flexible modular document generator for Common
+Lisp, because I couldn't find something similar:</p>
+
+<pre><code><span class="paren1">(<span class="code">gendoc <span class="paren2">(<span class="code"><span class="keyword">:output-filename</span> <span class="string">"docs.html"</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">:css</span> <span class="string">"simple.css"</span></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code"><span class="keyword">:mdf</span> <span class="string">"intro.md"</span></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code"><span class="keyword">:mdf</span> <span class="string">"details.md"</span></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code"><span class="keyword">:apiref</span> <span class="keyword">:some-package</span> <span class="keyword">:another-package</span></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code"><span class="keyword">:mdf</span> <span class="string">"closing.html"</span></span>)</span></span>)</span></code></pre>
+
+<p>Of some interest is probably the API reference generator:</p>
+
+<pre><code><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> some-function <span class="paren2">(<span class="code">X</span>)</span><br>&nbsp;&nbsp;<span class="string">"=&gt; output-forms<br><br>This takes `X` and produces *output-forms*"</span><br>&nbsp;&nbsp;...</span>)</span></code></pre>
+
+<p>The docstring is processed as markdown with <code>3bmd</code>, optionally
+specifying a return-spec if the first line starts with <code>&quot;=&gt;&quot;</code>.</p>
+
+<h2>Generating Documentation</h2>
+
+<p>Documentation isn't <em>just</em> about having a reference, but it's nice to
+integrate docstrings and separately-written material.  Gendoc does
+this by processing all the parts into HTML and concatenating them into
+a single file (or stream).</p>
+
+<p>Currently the following component types are understood:</p>
+
+<ul>
+<li><p>:text-file, :txt - Add the text file contents inside a &lt;pre&gt;
+  tag.</p></li>
+<li><p>:markdown-file, :mdf - Process the file with 3bmd (with code-blocks
+  enabled).</p></li>
+<li><p>:apiref - Generate an API reference for the specified packages. This
+  is fairly rudimentary at this point, as it only includes special
+  variables, functions, and macros.  Adding more is fairly trivial
+  however and I am open to suggestions.</p></li>
+</ul>
+
+<p>Clearly there could be more; TOC generation would be neat, HTML would
+be trivial.  Patches welcome.</p>
+
+<h2>Adding Component Types</h2>
+
+<p>New components types are trivial to add:</p>
+
+<pre><code><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> my-processor <span class="paren2">(<span class="code">stream name args</span>)</span><br>&nbsp;&nbsp;...</span>)</span><br><br>
+<span class="paren1">(<span class="code">gendoc:add-processor <span class="keyword">:my-processor</span> 'my-processor</span>)</span><br><br>
+<span class="paren1">(<span class="code">gendoc <span class="paren2">(<span class="code">...</span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code"><span class="keyword">:my-processor</span> x y z</span>)</span></span>)</span></code></pre>
+
+<p><code>NAME</code> is the name the processor was called with (in this example,
+<code>:my-processor</code>), and <code>ARGS</code> is the <code>cdr</code> of the part specified (<code>(x y z)</code>).</p>
+
+<p>You should output HTML to <code>STREAM</code>.</p>
+
+<h2>ASDF</h2>
+
+<p>In your ASD file specify:</p>
+
+<pre><code><span class="paren1">(<span class="code"><i><span class="symbol">eval-when</span></i> <span class="paren2">(<span class="code"><span class="keyword">:compile-toplevel</span> <span class="keyword">:load-toplevel</span> <span class="keyword">:execute</span></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">asdf:load-system <span class="keyword">:gendoc</span></span>)</span></span>)</span><br><br>&nbsp;&nbsp;<span class="keyword">:</span><br><br>
+<span class="paren1">(<span class="code"><i><span class="symbol">defsystem</span></i> <span class="keyword">:my-system-docs</span><br>&nbsp;&nbsp;<span class="keyword">:pathname</span> PATHNAME-TO-DOCUMENTATION<br>&nbsp;&nbsp;...</span>)</span><br><br>
+<span class="paren1">(<span class="code"><i><span class="symbol">gendoc:define-gendoc-load-op</span></i> <span class="keyword">:my-system-docs</span> <span class="keyword">:my-docs-package</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'generate-function</span>)</span></code></pre>
+
+<p>When you <code>(asdf:load :my-system-docs)</code>, it will call
+<code>GENERATE-FUNCTION</code>, which presumably calls <code>GENDOC</code> to generate
+documentation.</p>
+
+<p><code>GENDOC</code> can use the pathname of the system to look for the rest of
+your files, and place output there.</p>
+
+<p><strong>Note:</strong> This also defines <code>OPERATION-DONE-P</code> to <code>NIL</code> for the system
+you specify.  You probably don't want to do this for the main system,
+or it will be reloaded everytime ASDF looks for it.</p>
+
+<a name='REFERENCE-GENDOC'></a>
+<h1>
+  Reference: GENDOC
+</h1>
+<h2>
+  Functions
+</h2>
+<a name='ADD-PROCESSOR' class='apiref-row'></a>
+<div class='apiref-spec'>ADD-PROCESSOR
+</div>
+<div class='apiref-lambda'>(NAME FUNCTION)
+</div>
+<div class='apiref-result'>
+</div>
+<div class='apiref-doc'>
+
+<p>Call <code>FUNCTION</code> when the component named <code>NAME</code> is encountered in the
+gendoc spec.</p>
+
+</div>
+<h2>
+  Macros
+</h2>
+<a name='DEFINE-GENDOC-LOAD-OP' class='apiref-row'></a>
+<div class='apiref-spec'>DEFINE-GENDOC-LOAD-OP
+</div>
+<div class='apiref-lambda'>(SYSTEM-NAME PACKAGE-NAME FUNCTION-SYMBOL)
+</div>
+<div class='apiref-result'>
+</div>
+<div class='apiref-doc'>
+
+<p>Define <code>PERFORM</code> and <code>OPERATION-DONE-P</code> for <code>ASDF:LOAD-OP</code> for the system
+<code>SYSTEM-NAME</code>, causing <code>LOAD-OP</code> to always call <code>FUNCTION-SYMBOL</code> in the
+package <code>PACKAGE-NAME</code>.</p>
+
+<p>For this to be useful, the specified function should call <code>GENDOC</code> to actually
+generate documentation.</p>
+
+</div>
+<a name='GENDOC' class='apiref-row'></a>
+<div class='apiref-spec'>GENDOC
+</div>
+<div class='apiref-lambda'>((&KEY (STREAM '*STANDARD-OUTPUT*) (TITLE "GenDoc Documentation") CSS PATH
+  OUTPUT-SYSTEM OUTPUT-COMPONENT OUTPUT-FILENAME)
+ &BODY PARTS)
+</div>
+<div class='apiref-result'>=> string or no values
+</div>
+<div class='apiref-doc'>
+
+<p>Generate documentation based on <code>PARTS</code>.  Each part is processed in order
+and the output is written to <code>STREAM</code>, or, if specified, <code>OUTPUT-FILE</code> is
+overwritten (<code>:if-exists :supersede</code>).</p>
+
+<p><code>TITLE</code> and <code>CSS</code> specify their HTML counterparts.</p>
+
+<p><code>OUTPUT-SYSTEM</code> and <code>OUTPUT-COMPONENT</code> may be specified; if so, they are
+consulted to set <code>*DEFAULT-PATHNAME-DEFAULTS*</code>, and files are read from
+and written to this location.</p>
+
+<p><code>PATH</code> may be specified instead or along with <code>OUTPUT-SYSTEM</code> and
+<code>OUTPUT-COMPONENT</code>; if both are specified, <code>PATH</code> overrides.</p>
+
+</div>
+</html>
