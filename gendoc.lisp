@@ -11,11 +11,11 @@ package `PACKAGE-NAME`.
 For this to be useful, the specified function should call `GENDOC` to actually
 generate documentation."
     `(progn
-       (defmethod perform :after ((o asdf:load-op) (c (eql (find-system ,system-name))))
+       (defmethod asdf:perform :after ((o asdf:load-op) (c (eql (asdf:find-system ,system-name))))
          (let ((fn (find-symbol (symbol-name ,function-symbol) (find-package ,package-name))))
            (funcall fn)))
 
-       (defmethod operation-done-p ((o asdf:load-op) (c (eql (find-system ,system-name))))
+       (defmethod asdf:operation-done-p ((o asdf:load-op) (c (eql (asdf:find-system ,system-name))))
          nil))))
 
  ;; Parts
