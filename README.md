@@ -24,3 +24,5 @@ This takes `X` and produces *output-forms*"
 
 The docstring is processed as markdown with `3bmd`, optionally
 specifying a return-spec if the first line starts with `"=>"`.
+
+[See the generated documentation for cl-gendoc](http://rpav.github.com/cl-gendoc).
