@@ -182,7 +182,8 @@ and written to this location.
       (let ((ds (documentation sym 'function)))
         (if (and (> (length ds) 0)
                  (string= (subseq ds 0 2) "=>"))
-            (subseq ds (position #\Newline ds))
+            (let ((br (position #\Newline ds)))
+	      (if br (subseq ds br) "")) 
             ds))))
    "*Undocumented!*"))
 
