@@ -96,14 +96,17 @@ and written to this location.
               (when ,actual-filename
                 (setf ,actual-stream (open ,actual-filename :direction :output :if-exists :supersede))
                 (setf ,close-stream-p t))
-              (cl-who:with-html-output (,html ,actual-stream :prologue t :indent t)
-                (:head (and ,title (cl-who:htm (:title (cl-who:str ,title))))
-                       (and ,css (cl-who:htm (:link :rel "stylesheet" :type "text/css" :href ,css))))
+              (cl-who:with-html-output (,html ,actual-stream :prologue "<!DOCTYPE html>" :indent t)
                 (:html
-                 (loop for ,part in ',parts
-                       do (let* ((,proc-name (pop ,part))
-                                 (,processor (gethash ,proc-name *part-processor*)))
-                            (funcall ,processor ,actual-stream ,proc-name ,part))))))
+		 (:head
+		  (:meta :charset "UTF-8")
+		  (and ,title (cl-who:htm (:title (cl-who:str ,title))))
+		  (and ,css (cl-who:htm (:link :rel "stylesheet" :type "text/css" :href ,css))))
+                 (:body
+		  (loop for ,part in ',parts
+		     do (let* ((,proc-name (pop ,part))
+			       (,processor (gethash ,proc-name *part-processor*)))
+			  (funcall ,processor ,actual-stream ,proc-name ,part)))))))
          (when ,close-stream-p
            (close ,actual-stream)))
        (values))))
@@ -191,11 +194,11 @@ and written to this location.
   (cl-who:with-html-output (html stream :indent t)
     (:a :name symbol :class "apiref-row")
     (:div :class "apiref-spec"
-      (cl-who:str (apiref-spec type symbol)))
+      (cl-who:esc (apiref-spec type symbol)))
     (:div :class "apiref-lambda"
-      (cl-who:str (apiref-lambda type symbol)))
+      (cl-who:esc (apiref-lambda type symbol)))
     (:div :class "apiref-result"
-      (cl-who:str (apiref-result type symbol)))
+      (cl-who:esc (apiref-result type symbol)))
     (:div :class "apiref-doc"
       (cl-who:str
        (with-output-to-string (s)
