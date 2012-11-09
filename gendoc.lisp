@@ -192,8 +192,8 @@ and written to this location.
 
 (defun apiref-section-symbol (stream type symbol)
   (cl-who:with-html-output (html stream :indent t)
-    (:a :name symbol :class "apiref-row")
-    (:div :class "apiref-spec"
+    ;(:a :name symbol :class "apiref-row")
+    (:div :class "apiref-spec" :id symbol
       (cl-who:esc (apiref-spec type symbol)))
     (:div :class "apiref-lambda"
       (cl-who:esc (apiref-lambda type symbol)))
@@ -228,10 +228,13 @@ and written to this location.
   (cl-who:with-html-output (html stream :indent t)
     (loop for package-name in package-list
           do (cl-who:htm
-              (:a :name (concatenate 'string
-                                     "REFERENCE-"
-                                     (string package-name)))
-              (:h1 "Reference: " (cl-who:str package-name))
+              ;(:a :name (concatenate 'string
+              ;                       "REFERENCE-"
+              ;                       (string package-name)))
+              (:h1 :id (concatenate 'string
+				    "REFERENCE-"
+				    (string package-name))
+		   "Reference: " (cl-who:str package-name))
               (let ((package (find-package package-name)))
                 (if package
                     (gen-apiref stream package)
