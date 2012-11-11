@@ -113,12 +113,17 @@ and written to this location.
 
  ;; Processors
 
+(defun filename-id (filename)
+  (let ((name (pathname-name filename))
+	(type (pathname-type filename)))
+    (format nil "file-~a-~a" name type)))
+
 (defun process-text-file (stream name part)
   (declare (ignore name))
-  (let ((filename (car part))
-        (*standard-output* stream))
+  (let ((filename (car part)))
     (cl-who:with-html-output (html stream :indent t)
       (:article :class "text-article"
+		:id (filename-id filename)
        (:pre
 	(with-open-file (input filename)
 	  (princ (read-all input) stream)))))))
@@ -131,6 +136,7 @@ and written to this location.
   (let ((filename (car part)))
     (cl-who:with-html-output (html stream :indent t)
       (:article :class "markdown-article"
+		:id (filename-id filename)
        (with-open-file (input filename)
 	 (3bmd:parse-string-and-print-to-stream (read-all input) stream))))))
 
