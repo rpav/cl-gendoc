@@ -117,10 +117,11 @@ and written to this location.
   (declare (ignore name))
   (let ((filename (car part))
         (*standard-output* stream))
-    (write-line "<article class=\"text-article\"><pre>")
-    (with-open-file (input filename)
-      (princ (read-all input)))
-    (write-line "</pre></article>")))
+    (cl-who:with-html-output (html stream :indent t)
+      (:article :class "text-article"
+       (:pre
+	(with-open-file (input filename)
+	  (princ (read-all input) stream)))))))
 
 (add-processor :text-file #'process-text-file)
 (add-processor :txt #'process-text-file)
@@ -128,10 +129,10 @@ and written to this location.
 (defun process-markdown-file (stream name part)
   (declare (ignore name))
   (let ((filename (car part)))
-    (write-line "<article class=\"markdown-article\">")
-    (with-open-file (input filename)
-      (3bmd:parse-string-and-print-to-stream (read-all input) stream))
-    (write-line "</article>")))
+    (cl-who:with-html-output (html stream :indent t)
+      (:article :class "markdown-article"
+       (with-open-file (input filename)
+	 (3bmd:parse-string-and-print-to-stream (read-all input) stream))))))
 
 (add-processor :markdown-file #'process-markdown-file)
 (add-processor :mdf #'process-markdown-file)
@@ -197,9 +198,11 @@ and written to this location.
 
 (defun markdown-plain (input)
   "Runs `input` through markdown an removes the enclosing <p> tags."
-  (let ((md (with-output-to-string (s)
-	      (3bmd:parse-string-and-print-to-stream input s))))
-    (subseq md 5 (- (length md) 5))))
+  (if (> (length input) 0)
+      (let ((md (with-output-to-string (s)
+		  (3bmd:parse-string-and-print-to-stream input s))))
+	(subseq md 5 (- (length md) 5)))
+      ""))
 
 (defun apiref-section-symbol (stream type symbol)
   (cl-who:with-html-output (html stream :indent t)
