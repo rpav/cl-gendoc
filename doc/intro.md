@@ -95,3 +95,45 @@ your files, and place output there.
 **Note:** This also defines `OPERATION-DONE-P` to `NIL` for the system
 you specify.  You probably don't want to do this for the main system,
 or it will be reloaded everytime ASDF looks for it.
+
+## Anchors
+
+The following `id` attributes are generated and can be used as anchors:
+
+* Input files (text and markdown) get the id `file-<filename>-<file-ending>`, so `README.md` becomes `file-REAMDE-md`.
+  [(Try it)](#file-intro-md)
+
+* The reference section for a package gets the id `reference-<package>`, e.g. the package `:GENDOC` results in the id `reference-gendoc`.
+  [(Try it)](#reference-gendoc)
+
+* The specials/functions/macros section get the id `<package>-specials`, `<package>-functions` and `<package>-macros`.
+  [(Try it)](#gendoc-macros)
+
+* Each entry for a symbol gets the id `apiref-<symbol>`.
+  [(Try it)](#apiref-gendoc)
+
+**Note:** All ids (except for input files) are lowercase.
+
+## CSS
+
+The following classes are defined in the resulting html and can be used with CSS:
+
+* Text files are put into `<article>` tags with the class `text-article`.
+
+* Markdown files are put into `<article>` tags with the class `markdown-article`.
+
+* The reference for each package is an `<article>` with the class `apiref-article`.
+
+* Each specials/functions/macros block is a `<section>` with the class `section-<specials|functions|macros>`.
+
+* Each entry in the symbol list of a package is a `<section>` with the class `section-apiref-item`.
+
+* Each symbol in the symbol list is enclosed in a `<div>` with the class `apiref-spec`.
+
+* Each lambda list is enclosed in a `<div>` with the class `apiref-lambda`.
+
+* The result line ("=> ...") of a docstring lives in a `<div>` with the class `apiref-result`.
+
+* The rest of the docstring becomes a `<div>` with the class `apiref-doc`.
+
+Tip: to convert your symbols and lambda lists to lowercase, you can use the CSS property `text-transform: lowercase;`
