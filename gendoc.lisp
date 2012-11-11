@@ -96,12 +96,12 @@ and written to this location.
               (when ,actual-filename
                 (setf ,actual-stream (open ,actual-filename :direction :output :if-exists :supersede))
                 (setf ,close-stream-p t))
-              (cl-who:with-html-output (,html ,actual-stream :prologue "<!DOCTYPE html>" :indent t)
-                (:html
+              (cl-who:with-html-output (,html ,actual-stream :prologue "<!doctype html>" :indent t)
+                (:html :lang "en"
 		 (:head
 		  (:meta :charset "UTF-8")
 		  (and ,title (cl-who:htm (:title (cl-who:str ,title))))
-		  (and ,css (cl-who:htm (:link :rel "stylesheet" :type "text/css" :href ,css))))
+		  (and ,css (cl-who:htm (:link :rel "stylesheet" :href ,css))))
                  (:body
 		  (loop for ,part in ',parts
 		     do (let* ((,proc-name (pop ,part))
@@ -117,10 +117,10 @@ and written to this location.
   (declare (ignore name))
   (let ((filename (car part))
         (*standard-output* stream))
-    (write-line "<pre>")
+    (write-line "<article class=\"text-article\"><pre>")
     (with-open-file (input filename)
       (princ (read-all input)))
-    (write-line "</pre>")))
+    (write-line "</pre></article>")))
 
 (add-processor :text-file #'process-text-file)
 (add-processor :txt #'process-text-file)
@@ -128,8 +128,10 @@ and written to this location.
 (defun process-markdown-file (stream name part)
   (declare (ignore name))
   (let ((filename (car part)))
+    (write-line "<article class=\"markdown-article\">")
     (with-open-file (input filename)
-      (3bmd:parse-string-and-print-to-stream (read-all input) stream))))
+      (3bmd:parse-string-and-print-to-stream (read-all input) stream))
+    (write-line "</article>")))
 
 (add-processor :markdown-file #'process-markdown-file)
 (add-processor :mdf #'process-markdown-file)
@@ -190,19 +192,32 @@ and written to this location.
             ds))))
    "*Undocumented!*"))
 
+(defun apiref-section-id (symbol)
+  (format nil "apiref-~(~a~)" symbol))
+
+(defun markdown-plain (input)
+  "Runs `input` through markdown an removes the enclosing <p> tags."
+  (let ((md (with-output-to-string (s)
+	      (3bmd:parse-string-and-print-to-stream input s))))
+    (subseq md 5 (- (length md) 5))))
+
 (defun apiref-section-symbol (stream type symbol)
   (cl-who:with-html-output (html stream :indent t)
     ;(:a :name symbol :class "apiref-row")
-    (:div :class "apiref-spec" :id symbol
+    (:section
+     :id (apiref-section-id symbol)
+     :class "section-apiref-item"
+     (:div :class "apiref-spec"
       (cl-who:esc (apiref-spec type symbol)))
-    (:div :class "apiref-lambda"
+     (:div :class "apiref-lambda"
       (cl-who:esc (apiref-lambda type symbol)))
-    (:div :class "apiref-result"
-      (cl-who:esc (apiref-result type symbol)))
-    (:div :class "apiref-doc"
-      (cl-who:str
-       (with-output-to-string (s)
-         (3bmd:parse-string-and-print-to-stream (apiref-doc type symbol) s))))))
+     (:div :class "apiref-result"
+      (cl-who:str (markdown-plain (apiref-result type symbol))))
+     (:div :class "apiref-doc"
+      (3bmd:parse-string-and-print-to-stream (apiref-doc type symbol) stream)))))
+
+(defun package-section-id (package suffix)
+  (format nil "~(~a~)-~(~a~)" (package-name package) suffix))
 
 (defun gen-apiref (stream package)
   (let ((*package* package)
@@ -211,17 +226,29 @@ and written to this location.
         (macros (apiref-symbols :macro package)))
     (cl-who:with-html-output (html stream :indent t)
       (when specials
-        (cl-who:htm (:h2 "Special Variables"))
-        (loop for sym in specials
-              do (apiref-section-symbol stream :special sym)))
+	(cl-who:htm
+	 (:section
+	  :id (package-section-id package "specials")
+	  :class "section-specials"
+	  (:h2 "Special Variables")
+	  (loop for sym in specials
+	    do (apiref-section-symbol stream :special sym)))))
       (when functions
-        (cl-who:htm (:h2 "Functions"))
-        (loop for sym in functions
-              do (apiref-section-symbol stream :function sym)))
+        (cl-who:htm
+	 (:section
+	  :id (package-section-id package "functions")
+	  :class "section-functions"
+	  (:h2 "Functions")
+	  (loop for sym in functions
+              do (apiref-section-symbol stream :function sym)))))
       (when macros
-        (cl-who:htm (:h2 "Macros"))
-        (loop for sym in macros
-              do (apiref-section-symbol stream :macro sym))))))
+        (cl-who:htm
+	 (:section
+	  :id (package-section-id package "macros")
+	  :class "section-macros"
+	  (:h2 "Macros")
+	  (loop for sym in macros
+              do (apiref-section-symbol stream :macro sym))))))))
 
 (defun process-apiref (stream name package-list)
   (declare (ignore name))
@@ -231,13 +258,13 @@ and written to this location.
               ;(:a :name (concatenate 'string
               ;                       "REFERENCE-"
               ;                       (string package-name)))
-              (:h1 :id (concatenate 'string
-				    "REFERENCE-"
-				    (string package-name))
-		   "Reference: " (cl-who:str package-name))
-              (let ((package (find-package package-name)))
-                (if package
-                    (gen-apiref stream package)
-                    (cl-who:htm (:p "Package not found."))))))))
+	      (:article
+	       :id (format nil "reference-~(~a~)" package-name)
+	       :class "apiref-article"
+	       (:h1 "Reference: " (cl-who:str package-name))
+	       (let ((package (find-package package-name)))
+		 (if package
+		     (gen-apiref stream package)
+		     (cl-who:htm (:p "Package not found.")))))))))
 
 (add-processor :apiref 'process-apiref)
