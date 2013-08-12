@@ -31,7 +31,8 @@ gendoc spec."
 
 (defun read-all (file-stream)
   (let ((output (make-array (file-length file-stream)
-                            :element-type (stream-element-type file-stream))))
+                            :element-type #-allegro (stream-element-type file-stream)
+							              #+allegro 'character)))
     (read-sequence output file-stream)
     output))
 
@@ -50,7 +51,11 @@ gendoc spec."
 (defun arglist (function)
   (ext:arglist function))
 
-#-(or sbcl ccl clisp)
+#+allegro
+(defun arglist (function)
+  (excl:arglist function))
+
+#-(or sbcl ccl clisp allegro)
 (defun arglist (function)
   (warn "Your implementation doesn't currently support ARGLIST.  Submit a patch!")
   "...")
