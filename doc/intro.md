@@ -124,6 +124,8 @@ The following classes are defined in the resulting html and can be used with CSS
 
 * The reference for each package is an `<article>` with the class `apiref-article`.
 
+* The docstring of a package is a `<section>` with the class `package-docstring`.
+
 * Each specials/functions/macros block is a `<section>` with the class `section-<specials|functions|macros>`.
 
 * Each entry in the symbol list of a package is a `<section>` with the class `section-apiref-item`.

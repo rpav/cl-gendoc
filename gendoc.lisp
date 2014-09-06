@@ -238,8 +238,14 @@ and written to this location.
   (let ((*package* package)
         (specials (apiref-symbols :special package))
         (functions (apiref-symbols :function package))
-        (macros (apiref-symbols :macro package)))
+        (macros (apiref-symbols :macro package))
+        (package-doc (documentation package t)))
     (cl-who:with-html-output (html stream :indent t)
+      (when package-doc
+        (cl-who:htm
+         (:section
+          :class "package-docstring"
+          (3bmd:parse-string-and-print-to-stream package-doc stream))))
       (when specials
 	(cl-who:htm
 	 (:section
