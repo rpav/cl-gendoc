@@ -188,7 +188,7 @@ and written to this location.
      (let ((ds (documentation sym 'function)))
        (if (and (> (length ds) 0)
                 (string= (subseq ds 0 2) "=>"))
-           (subseq ds 0 (position #\Newline ds))
+           (subseq ds 2 (position #\Newline ds))
            "")))))
 
 (defun apiref-doc (type sym)
@@ -212,8 +212,8 @@ and written to this location.
   (if (> (length input) 0)
       (let ((md (with-output-to-string (s)
 		  (3bmd:parse-string-and-print-to-stream input s))))
-	(subseq md 5 (- (length md) 5)))
-      ""))
+	(subseq md 3 (- (length md) 5)))
+      nil))
 
 (defun apiref-section-symbol (stream type symbol)
   (cl-who:with-html-output (html stream :indent t)
@@ -225,8 +225,9 @@ and written to this location.
       (cl-who:esc (apiref-spec type symbol)))
      (:div :class "apiref-lambda"
       (cl-who:esc (apiref-lambda type symbol)))
-     (:div :class "apiref-result"
-      (cl-who:str (markdown-plain (apiref-result type symbol))))
+     (let ((res (markdown-plain (apiref-result type symbol))))
+       (when res
+         (cl-who:htm (:div :class "apiref-result" (cl-who:str res)))))
      (:div :class "apiref-doc"
       (3bmd:parse-string-and-print-to-stream (apiref-doc type symbol) stream)))))
 
@@ -237,8 +238,14 @@ and written to this location.
   (let ((*package* package)
         (specials (apiref-symbols :special package))
         (functions (apiref-symbols :function package))
-        (macros (apiref-symbols :macro package)))
+        (macros (apiref-symbols :macro package))
+        (package-doc (documentation package t)))
     (cl-who:with-html-output (html stream :indent t)
+      (when package-doc
+        (cl-who:htm
+         (:section
+          :class "package-docstring"
+          (3bmd:parse-string-and-print-to-stream package-doc stream))))
       (when specials
 	(cl-who:htm
 	 (:section

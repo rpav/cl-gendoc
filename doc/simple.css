@@ -24,6 +24,10 @@
     margin-left: 20px;
 }
 
+.apiref-result:before {
+    content: "=> ";
+}
+
 .apiref-doc {
     display: block;
     float: none;

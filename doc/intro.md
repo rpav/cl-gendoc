@@ -124,6 +124,8 @@ The following classes are defined in the resulting html and can be used with CSS
 
 * The reference for each package is an `<article>` with the class `apiref-article`.
 
+* The docstring of a package is a `<section>` with the class `package-docstring`.
+
 * Each specials/functions/macros block is a `<section>` with the class `section-<specials|functions|macros>`.
 
 * Each entry in the symbol list of a package is a `<section>` with the class `section-apiref-item`.
@@ -133,6 +135,14 @@ The following classes are defined in the resulting html and can be used with CSS
 * Each lambda list is enclosed in a `<div>` with the class `apiref-lambda`.
 
 * The result line ("=> ...") of a docstring lives in a `<div>` with the class `apiref-result`.
+  This `<div>` is only created if a result line is given.
+  The "=>" is removed from the line but can be restored in the documentation with the following css:
+
+    ```css
+    .apiref-result:before {
+       content: "=> ";
+    }
+    ```
 
 * The rest of the docstring becomes a `<div>` with the class `apiref-doc`.
 
