@@ -4,7 +4,8 @@
   :author "Ryan Pavlik"
   :license "LLGPL, BSD"
 
-  :depends-on (:cl-who :3bmd :3bmd-ext-code-blocks)
+  :depends-on (#+sbcl :sb-introspect
+               :cl-who :3bmd :3bmd-ext-code-blocks)
   :serial t
 
   :components
@@ -13,7 +14,7 @@
 
 (defsystem :cl-gendoc-docs
   :depends-on (:cl-gendoc)
-  
+
   :pathname "doc"
   :serial t
   :components
