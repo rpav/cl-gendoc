@@ -55,7 +55,11 @@ gendoc spec."
 (defun arglist (function)
   (excl:arglist function))
 
-#-(or sbcl ccl clisp allegro)
+#+ecl
+(defun arglist (function)
+  (ext:function-lambda-list function))
+
+#-(or sbcl ccl clisp allegro ecl)
 (defun arglist (function)
   (warn "Your implementation doesn't currently support ARGLIST.  Submit a patch!")
   "...")
