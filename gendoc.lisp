@@ -158,7 +158,14 @@ and written to this location.
 
 (defun function-p (symbol)
   (and (fboundp symbol)
-       (not (macro-function symbol))))
+       (if (symbolp symbol)
+           (not (macro-function symbol))
+           t)
+       (not (typep (fdefinition symbol) 'generic-function))))
+
+(defun generic-function-p (symbol)
+  (and (fboundp symbol)
+       (typep (fdefinition symbol) 'generic-function)))
 
 (defun macro-p (symbol)
   (macro-function symbol))
@@ -169,18 +176,28 @@ and written to this location.
           if (ecase type
                (:special (special-p symbol))
                (:macro (macro-p symbol))
-               (:function (function-p symbol)))
-            do (push symbol symbols))
-    (sort symbols #'string<)))
+               (:function (function-p symbol))
+               (:generic-function (generic-function-p symbol)))
+            do (push symbol symbols)
+          if (case type
+               (:function (function-p (list 'setf symbol)))
+               (:generic-function (generic-function-p (list 'setf symbol))))
+            do (push (list 'setf symbol) symbols))
+    (sort symbols #'string< :key (lambda (s) (if (symbolp s)
+                                            s
+                                            ;; Make (SETF SYMBOL) always after SYMBOL
+                                            (format nil "~a-" (second s)))))))
 
 (defun apiref-spec (type sym)
   (declare (ignore type))
-  (string sym))
+  (if (symbolp sym)
+      (string sym)
+      (format nil "(SETF ~a)" (string (second sym)))))
 
 (defun apiref-lambda (type sym)
   (ecase type
     (:special "")
-    ((or :macro :function)
+    ((or :macro :function :generic-function)
      (if (arglist sym)
          (write-to-string (arglist sym))
          "()"))))
@@ -188,7 +205,7 @@ and written to this location.
 (defun apiref-result (type sym)
   (ecase type
     (:special "")
-    ((or :macro :function)
+    ((or :macro :function :generic-function)
      (let ((ds (documentation sym 'function)))
        (if (and (> (length ds) 0)
                 (string= (subseq ds 0 2) "=>"))
@@ -196,15 +213,15 @@ and written to this location.
            "")))))
 
 (defun apiref-doc (type sym)
-  (or 
+  (or
    (ecase type
      (:special (documentation sym 'variable))
-     ((or :macro :function)
+     ((or :macro :function :generic-function)
       (let ((ds (documentation sym 'function)))
         (if (and (> (length ds) 0)
                  (string= (subseq ds 0 2) "=>"))
             (let ((br (position #\Newline ds)))
-	      (if br (subseq ds br) "")) 
+	      (if br (subseq ds br) ""))
             ds))))
    "*Undocumented!*"))
 
@@ -221,19 +238,19 @@ and written to this location.
 
 (defun apiref-section-symbol (stream type symbol)
   (cl-who:with-html-output (html stream :indent t)
-    ;(:a :name symbol :class "apiref-row")
+                                        ;(:a :name symbol :class "apiref-row")
     (:section
      :id (apiref-section-id symbol)
      :class "section-apiref-item"
      (:div :class "apiref-spec"
-      (cl-who:esc (apiref-spec type symbol)))
+           (cl-who:esc (apiref-spec type symbol)))
      (:div :class "apiref-lambda"
-      (cl-who:esc (apiref-lambda type symbol)))
+           (cl-who:esc (apiref-lambda type symbol)))
      (let ((res (markdown-plain (apiref-result type symbol))))
        (when res
          (cl-who:htm (:div :class "apiref-result" (cl-who:str res)))))
      (:div :class "apiref-doc"
-      (3bmd:parse-string-and-print-to-stream (apiref-doc type symbol) stream)))))
+           (3bmd:parse-string-and-print-to-stream (apiref-doc type symbol) stream)))))
 
 (defun package-section-id (package suffix)
   (format nil "~(~a~)-~(~a~)" (package-name package) suffix))
@@ -242,6 +259,7 @@ and written to this location.
   (let ((*package* package)
         (specials (apiref-symbols :special package))
         (functions (apiref-symbols :function package))
+        (generic-functions (apiref-symbols :generic-function package))
         (macros (apiref-symbols :macro package))
         (package-doc (documentation package t)))
     (cl-who:with-html-output (html stream :indent t)
@@ -265,7 +283,15 @@ and written to this location.
 	  :class "section-functions"
 	  (:h2 "Functions")
 	  (loop for sym in functions
-              do (apiref-section-symbol stream :function sym)))))
+         do (apiref-section-symbol stream :function sym)))))
+      (when generic-functions
+        (cl-who:htm
+	 (:section
+	  :id (package-section-id package "generic-functions")
+	  :class "section-generic-functions"
+	  (:h2 "Generic Functions")
+	  (loop for sym in generic-functions
+         do (apiref-section-symbol stream :generic-function sym)))))
       (when macros
         (cl-who:htm
 	 (:section
